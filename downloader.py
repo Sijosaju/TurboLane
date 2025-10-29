@@ -11,8 +11,6 @@ class MultiStreamDownloader:
     def __init__(self, url, num_streams=DEFAULT_NUM_STREAMS, progress_callback=None):
         """
         Initialize the downloader.
-        
-        Args:
             url: The URL to download from
             num_streams: Number of parallel streams to use
             progress_callback: Function to call with progress updates (for GUI)

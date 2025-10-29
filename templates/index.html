@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurboLane - Advanced Download Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   <style>
+    :root {
+        --primary-color: #000000;
+        --primary-light: #333333;
+        --primary-dark: #000000;
+        --secondary-color: #666666;
+        --accent-color: #ffffff;
+        --success-color: #000000;
+        --warning-color: #333333;
+        --danger-color: #000000;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8f9fa;
+        --bg-surface: #ffffff;
+        --bg-card: #ffffff;
+        --text-primary: #000000;
+        --text-secondary: #666666;
+        --text-muted: #999999;
+        --border-color: #e5e5e5;
+        --border-light: #f0f0f0;
+        --border-dark: #cccccc;
+        --sidebar-bg: #000000;
+        --sidebar-text: #ffffff;
+        --sidebar-text-secondary: #cccccc;
+        --sidebar-border: #333333;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+        --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+    }
+
+    /* Minimalist Effects */
+    .minimal-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+    }
+
+    .minimal-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--border-dark);
+    }
+
+    /* Sidebar - Full Black Background */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 280px;
+        height: 100vh;
+        background: var(--sidebar-bg);
+        padding: 0;
+        z-index: 1000;
+        border-right: 1px solid var(--sidebar-border);
+        box-shadow: var(--shadow-xl);
+    }
+
+    .sidebar-header {
+        padding: 30px 24px;
+        border-bottom: 1px solid var(--sidebar-border);
+        background: var(--sidebar-bg);
+    }
+
+    .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--sidebar-text);
+        text-decoration: none;
+    }
+
+    .sidebar-logo {
+        width: 44px;
+        height: 44px;
+        background: var(--sidebar-text);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: var(--sidebar-bg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .sidebar-title {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: var(--sidebar-text);
+    }
+
+    .nav-menu {
+        list-style: none;
+        padding: 24px 16px;
+    }
+
+    .nav-item {
+        margin-bottom: 8px;
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 16px;
+        color: var(--sidebar-text-secondary);
+        text-decoration: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-size: 15px;
+        font-weight: 500;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background: var(--sidebar-text);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--sidebar-text);
+        transform: translateX(4px);
+    }
+
+    .nav-link:hover::before {
+        transform: scaleX(1);
+    }
+
+    .nav-link.active {
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--sidebar-text);
+        border-left: 3px solid var(--sidebar-text);
+    }
+
+    .nav-link.active::before {
+        transform: scaleX(1);
+    }
+
+    .nav-link i {
+        font-size: 18px;
+        width: 20px;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover i {
+        transform: scale(1.1);
+    }
+
+    /* Main Content */
+    .main-content {
+        margin-left: 280px;
+        padding: 40px;
+        min-height: 100vh;
+        background: var(--bg-primary);
+    }
+
+    .page-header {
+        margin-bottom: 40px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+
+    .page-header p {
+        color: var(--text-secondary);
+        font-size: 16px;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    /* Cards */
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        margin-bottom: 32px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--border-dark);
+    }
+
+    .card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-surface);
+    }
+
+    .card-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .card-body {
+        padding: 28px;
+    }
+
+    /* Form Controls */
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 15px;
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        background: var(--bg-primary);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .btn {
+        padding: 14px 28px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: var(--accent-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+        background: var(--primary-light);
+    }
+
+    .btn-sm {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .badge-count {
+        background: var(--primary-color);
+        color: var(--accent-color);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Download Items - Minimal Design */
+    .download-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .download-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .download-item:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        border-color: var(--border-dark);
+    }
+
+    .download-item.downloading::before {
+        background: var(--primary-color);
+    }
+
+    .download-item.completed::before {
+        background: var(--success-color);
+    }
+
+    .download-item.failed::before {
+        background: var(--danger-color);
+    }
+
+    .download-item.cancelled::before {
+        background: var(--warning-color);
+    }
+
+    .download-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .download-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 6px 0;
+        word-break: break-word;
+    }
+
+    .download-meta {
+        font-size: 14px;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .download-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-secondary);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        border-color: var(--border-dark);
+        color: var(--text-primary);
+    }
+
+    .action-btn.success {
+        background: var(--success-color);
+        color: var(--accent-color);
+        border: none;
+    }
+
+    .action-btn.danger:hover {
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+
+    /* Progress Bars - Minimal Design */
+    .progress-container {
+        margin-bottom: 16px;
+    }
+
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .progress-percent {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 16px;
+    }
+
+    .progress-speed {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .progress-bar-container {
+        height: 6px;
+        background: var(--border-light);
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar {
+        height: 100%;
+        transition: width 0.4s ease;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar.downloading {
+        background: var(--primary-color);
+    }
+
+    .progress-bar.completed {
+        background: var(--success-color);
+    }
+
+    .progress-bar.failed {
+        background: var(--danger-color);
+    }
+
+    .progress-bar.cancelled {
+        background: var(--warning-color);
+    }
+
+    /* Status */
+    .status-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        padding: 8px 0;
+    }
+
+    .status-line i {
+        font-size: 14px;
+    }
+
+    .status-line.downloading {
+        color: var(--primary-color);
+    }
+
+    .status-line.completed {
+        color: var(--success-color);
+    }
+
+    .status-line.failed {
+        color: var(--danger-color);
+    }
+
+    .status-line.cancelled {
+        color: var(--warning-color);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: var(--border-color);
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* Metrics Display */
+    .metrics-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 28px;
+        color: var(--text-primary);
+        margin-bottom: 32px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .metrics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .metrics-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-primary);
+    }
+
+    .metrics-close {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 8px;
+        font-size: 20px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .metrics-close:hover {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .metrics-content {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 24px;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 14px;
+        line-height: 1.8;
+        color: var(--text-secondary);
+        overflow-x: auto;
+        white-space: pre-wrap;
+    }
+
+    .metrics-content strong {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        font-size: 14px;
+        border: 1px solid;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .alert-success {
+        background: var(--bg-surface);
+        border-color: var(--success-color);
+        color: var(--text-primary);
+    }
+
+    .alert-danger {
+        background: var(--bg-surface);
+        border-color: var(--danger-color);
+        color: var(--text-primary);
+    }
+
+    .alert-warning {
+        background: var(--bg-surface);
+        border-color: var(--warning-color);
+        color: var(--text-primary);
+    }
+
+    /* Radio buttons and form checks */
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 12px 16px;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .form-check:hover {
+        border-color: var(--primary-color);
+    }
+
+    .form-check-input {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: auto;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: inherit;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+
+    .btn-close:hover {
+        opacity: 1;
+    }
+
+    /* File Manager Styles */
+    .file-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .file-item:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+        border-color: var(--border-dark);
+    }
+
+    .file-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .file-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-color);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: var(--accent-color);
+    }
+
+    .file-details {
+        flex: 1;
+    }
+
+    .file-details h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 4px 0;
+        word-break: break-word;
+    }
+
+    .file-meta {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    .file-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* File type specific icons - All black */
+    .file-zip .file-icon { background: var(--primary-color); }
+    .file-pdf .file-icon { background: var(--primary-color); }
+    .file-image .file-icon { background: var(--primary-color); }
+    .file-video .file-icon { background: var(--primary-color); }
+    .file-audio .file-icon { background: var(--primary-color); }
+    .file-document .file-icon { background: var(--primary-color); }
+    .file-executable .file-icon { background: var(--primary-color); }
+
+    /* Empty state for file manager */
+    #fileManager .empty-state {
+        padding: 60px 40px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .main-content {
+            margin-left: 0;
+            padding: 24px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-content {
+            padding: 20px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .download-header {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .download-actions {
+            align-self: flex-end;
+        }
+
+        .file-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .file-actions {
+            align-self: flex-end;
+        }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-dark);
+        border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    /* Page sections */
+    .page-section {
+        display: none;
+    }
+
+    .page-section.active {
+        display: block;
+    }
+</style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-brand">
+                <div class="sidebar-logo">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <span class="sidebar-title">TurboLane</span>
+            </a>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link active" data-page="downloads">
+                    <i class="fas fa-download"></i>
+                    <span>Downloads</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="files">
+                    <i class="fas fa-folder"></i>
+                    <span>File Manager</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-page="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Downloads Page -->
+        <div class="page-section active" id="downloads-page">
+            <div class="page-header">
+                <h1>TurboLane Download Manager</h1>
+                <p>High-performance multi-stream downloads with advanced analytics</p>
+            </div>
+
+            <!-- Download Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-rocket"></i> New Download</h2>
+                </div>
+                <div class="card-body">
+                    <form id="downloadForm">
+                        <div class="mb-4">
+                            <label for="url" class="form-label">Download URL</label>
+                            <input type="url" class="form-control" id="url" placeholder="https://example.com/large-file.zip" required>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Download Mode</label>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="mode" id="multiMode" value="multi" checked>
+                                        <label class="form-check-label" for="multiMode">
+                                            <i class="fas fa-layer-group text-primary me-2"></i>
+                                            Multi-Stream (Turbo)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="mode" id="singleMode" value="single">
+                                        <label class="form-check-label" for="singleMode">
+                                            <i class="fas fa-stream text-secondary me-2"></i>
+                                            Single-Stream (Standard)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="numStreams" class="form-label">Parallel Streams</label>
+                                <input type="number" class="form-control" id="numStreams" min="1" max="16" value="8">
+                                <small class="text-muted mt-1 d-block">More streams = faster download (if supported)</small>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i>
+                            <span>Start Turbo Download</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Downloads -->
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                    <span>Active Downloads</span>
+                    <span class="badge-count" id="activeCount">0</span>
+                </div>
+            </div>
+            <div id="activeDownloads">
+                <div class="empty-state" id="noActiveDownloads">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    <p>No active downloads</p>
+                    <small class="text-muted">Start a download to see it here</small>
+                </div>
+            </div>
+
+            <!-- Download History -->
+            <div class="section-header" style="margin-top: 48px;">
+                <div class="section-title">
+                    <i class="fas fa-history"></i>
+                    <span>Download History</span>
+                </div>
+            </div>
+            <div id="downloadHistory">
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <p>No download history yet</p>
+                    <small class="text-muted">Completed downloads will appear here</small>
+                </div>
+            </div>
+
+            <!-- Metrics Display -->
+            <div class="metrics-card d-none" id="metricsCard">
+                <div class="metrics-header">
+                    <h2><i class="fas fa-chart-line"></i> Performance Analytics</h2>
+                    <button class="metrics-close" id="closeMetrics">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="metrics-content" id="metricsDisplay"></div>
+            </div>
+        </div>
+
+        <!-- File Manager Page -->
+        <div class="page-section" id="files-page">
+            <div class="page-header">
+                <h1>File Manager</h1>
+                <p>Manage all your downloaded files in one place</p>
+            </div>
+
+            <!-- File Manager -->
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-folder"></i>
+                    <span>Downloaded Files</span>
+                    <span class="badge-count" id="fileCount">0</span>
+                </div>
+                <div class="download-actions">
+                    <button class="action-btn" id="refreshFiles" title="Refresh Files">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="action-btn" id="openDownloadsFolder" title="Open Downloads Folder">
+                        <i class="fas fa-folder-open"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="fileManager">
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No files downloaded yet</p>
+                    <small class="text-muted">Downloaded files will appear here</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Page -->
+        <div class="page-section" id="analytics-page">
+            <div class="page-header">
+                <h1>Download Analytics</h1>
+                <p>Track your download performance and statistics</p>
+            </div>
+            <div class="empty-state">
+                <i class="fas fa-chart-bar"></i>
+                <p>Analytics coming soon</p>
+                <small class="text-muted">Track your download statistics and performance metrics</small>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div class="page-section" id="settings-page">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p>Configure your download manager preferences</p>
+            </div>
+            <div class="empty-state">
+                <i class="fas fa-cog"></i>
+                <p>Settings coming soon</p>
+                <small class="text-muted">Configure your download preferences and application settings</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Download Item Template -->
+    <template id="downloadItemTemplate">
+        <div class="download-item">
+            <div class="download-header">
+                <div class="download-info">
+                    <h3 class="url-text"></h3>
+                    <div class="download-meta">
+                        <i class="fas fa-tag"></i>
+                        <span class="mode-text"></span>
+                    </div>
+                </div>
+                <div class="download-actions">
+                    <button class="action-btn view-metrics" title="View Analytics">
+                        <i class="fas fa-chart-bar"></i>
+                    </button>
+                    <button class="action-btn danger cancel-download" title="Cancel Download">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span class="progress-percent">0%</span>
+                    <span class="progress-speed speed-text">Starting...</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="status-line">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span class="status-text">Initializing download...</span>
+            </div>
+        </div>
+    </template>
+
+    <!-- File Item Template -->
+    <template id="fileItemTemplate">
+        <div class="file-item">
+            <div class="file-header">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas fa-file"></i>
+                    </div>
+                    <div class="file-details">
+                        <h4 class="file-name"></h4>
+                        <div class="file-meta">
+                            <span class="file-size"></span>
+                            <span class="file-date"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="action-btn open-file" title="Open File">
+                        <i class="fas fa-external-link-alt"></i>
+                    </button>
+                    <button class="action-btn download-file" title="Download Again">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="action-btn danger delete-file" title="Delete File">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

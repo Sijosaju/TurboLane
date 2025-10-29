@@ -217,3 +217,24 @@ class SimpleDownloader:
             elapsed = time.time() - self.start_time
             return (self.downloaded_bytes / (1024 * 1024)) / elapsed if elapsed > 0 else 0
         return 0
+
+    def get_detailed_metrics(self):
+        """
+        Calculate detailed download metrics for Flask integration.
+        Returns dictionary with all metrics.
+        """
+        if not self.start_time:
+            return None
+        
+        total_time = time.time() - self.start_time
+        
+        # Calculate throughput
+        throughput_mbps = (self.file_size * 8) / (total_time * 1024 * 1024) if total_time > 0 else 0
+        throughput_MBps = self.file_size / (total_time * 1024 * 1024) if total_time > 0 else 0
+        
+        return {
+            'total_time': total_time,
+            'file_size_mb': self.file_size / (1024 * 1024),
+            'throughput_mbps': throughput_mbps,
+            'throughput_MBps': throughput_MBps
+        }
