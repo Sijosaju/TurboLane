@@ -643,124 +643,22 @@ class DownloadManager {
         }
     }
 
-    updateRLInfo(downloadId, status) {
-        const info = this.activeDownloads.get(downloadId);
-        if (!info || !info.useRL) return;
+updateRLInfo(downloadId, status) {
+    const info = this.activeDownloads.get(downloadId);
+    if (!info || !info.useRL) return;
 
-        const rlInfoSection = info.element.querySelector('.rl-info-section');
-        if (!rlInfoSection) return;
+    const rlInfoSection = info.element.querySelector('.rl-info-section');
+    if (!rlInfoSection) return;
 
-        // Get actual RL metrics from backend
-        fetch('/api/rl/stats')
-            .then(response => response.json())
-            .then(rlStats => {
-                // Update RL info with REAL data
-                const currentStreams = rlStats.current_connections || info.rlInfo.currentStreams;
-                const explorationRate = ((rlStats.exploration_rate || 0) * 100).toFixed(1);
-                const qTableSize = rlStats.q_table_size || 0;
-                const avgReward = rlStats.average_reward ? rlStats.average_reward.toFixed(3) : '0.000';
-                const lastReward = rlStats.last_reward ? rlStats.last_reward.toFixed(3) : '0.000';
-                
-                info.rlInfo.currentStreams = currentStreams;
-                info.rlInfo.explorationRate = explorationRate;
-                info.rlInfo.learningProgress = qTableSize;
-                
-                // Update throughput from actual download speed
-                if (status.speed > 0) {
-                    info.rlInfo.throughput = status.speed * 8; // Convert MB/s to Mbps
-                }
+    // ✅ GET STREAM COUNT FROM BACKEND STATUS
+    const currentStreams = status.current_streams;
+    info.rlInfo.currentStreams = currentStreams;
 
-                // Create informative RL status based on REAL learning progress
-                let statusText = '🤖 RL Optimizing';
-                let statusColor = '#10b981';
-                
-                if (rlStats.exploration_rate > 0.4) {
-                    statusText = '🤖 RL Exploring (Learning)';
-                    statusColor = '#f59e0b';
-                } else if (rlStats.exploration_rate > 0.2) {
-                    statusText = '🤖 RL Adapting';
-                    statusColor = '#3b82f6';
-                } else if (qTableSize > 100) {
-                    statusText = '🤖 RL Expert Mode';
-                    statusColor = '#8b5cf6';
-                }
+    // Update UI
+    const rlStreams = rlInfoSection.querySelector('.rl-streams strong');
+    if (rlStreams) rlStreams.textContent = currentStreams;
+}
 
-                // Use ACTUAL RL decision information
-                let lastDecision = 'Analyzing network...';
-                
-                // Determine decision based on actual RL state changes
-                if (info.rlInfo.lastStreamCount && currentStreams !== info.rlInfo.lastStreamCount) {
-                    const change = currentStreams - info.rlInfo.lastStreamCount;
-                    if (change > 0) {
-                        lastDecision = `Increased to ${currentStreams} streams`;
-                    } else if (change < 0) {
-                        lastDecision = `Decreased to ${currentStreams} streams`;
-                    }
-                } else if (currentStreams > 1) {
-                    lastDecision = `Maintaining ${currentStreams} streams`;
-                }
-                
-                info.rlInfo.lastDecision = lastDecision;
-
-                // Add to decision history for real changes only
-                if (info.rlInfo.lastStreamCount !== currentStreams) {
-                    info.rlInfo.decisionHistory.push({
-                        time: new Date().toLocaleTimeString(),
-                        decision: lastDecision,
-                        streams: currentStreams,
-                         reward: lastReward
-                    });
-                    
-                    // Keep only last 3 decisions
-                    if (info.rlInfo.decisionHistory.length > 3) {
-                        info.rlInfo.decisionHistory.shift();
-                    }
-                    
-                    // Add pulse animation for REAL RL decisions
-                    rlInfoSection.classList.add('rl-decision');
-                    setTimeout(() => {
-                        rlInfoSection.classList.remove('rl-decision');
-                    }, 600);
-                }
-
-                info.rlInfo.lastStreamCount = currentStreams;
-
-                // Update display with REAL data
-                const rlText = rlInfoSection.querySelector('.rl-text');
-                const rlStreams = rlInfoSection.querySelector('.rl-streams strong');
-                const rlThroughput = rlInfoSection.querySelector('.rl-throughput');
-                const rlLearning = rlInfoSection.querySelector('.rl-learning');
-                const decisionHistory = rlInfoSection.querySelector('.rl-decision-history');
-                
-                if (rlText) {
-                    rlText.textContent = statusText;
-                    rlText.style.color = statusColor;
-                }
-                if (rlStreams) rlStreams.textContent = currentStreams;
-                if (rlThroughput) rlThroughput.textContent = ` | ${info.rlInfo.throughput.toFixed(1)} Mbps`;
-                if (rlLearning) {
-                    rlLearning.textContent = `📊 ${qTableSize} states`;
-                    rlLearning.title = `Q-table: ${qTableSize} states\nAvg Reward: ${avgReward}\nLast Reward: ${lastReward}\nExplore: ${explorationRate}%`;
-                }
-
-                // Show decision history if we have any
-                if (info.rlInfo.decisionHistory.length > 0) {
-                    decisionHistory.innerHTML = info.rlInfo.decisionHistory.map(decision => 
-                        `<div style="margin-bottom: 2px; font-size: 10px; font-family: 'JetBrains Mono', monospace;">
-                            ${decision.time}: ${decision.decision} (Reward: ${decision.reward})
-                         </div>`
-                    ).join('');
-                } else {
-                    decisionHistory.innerHTML = `<span>Last decision: ${lastDecision} (Reward: ${lastReward})</span>`;
-                }
-            })
-            .catch(error => {
-                console.log('Could not fetch RL stats:', error);
-                // Fallback: show basic info without backend data
-                const rlStreams = rlInfoSection.querySelector('.rl-streams strong');
-                if (rlStreams) rlStreams.textContent = info.rlInfo.currentStreams;
-            });
-    }
 
     animateProgressBar(info, progressBar, progressPercent) {
         const now = performance.now();

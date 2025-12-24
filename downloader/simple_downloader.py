@@ -4,7 +4,13 @@ import os
 import requests
 from urllib.parse import urlparse, unquote
 import time
-from config import DOWNLOAD_FOLDER, CONNECTION_TIMEOUT, READ_TIMEOUT, BUFFER_SIZE
+from downloader.config import (
+    DOWNLOAD_FOLDER,
+    CONNECTION_TIMEOUT,
+    READ_TIMEOUT,
+    BUFFER_SIZE
+)
+
 
 class SimpleDownloader:
     """

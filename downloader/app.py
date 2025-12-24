@@ -7,9 +7,14 @@ import json
 import mimetypes
 import glob
 from datetime import datetime
-from downloader import MultiStreamDownloader
-from simple_downloader import SimpleDownloader
-from config import DOWNLOAD_FOLDER, FLASK_HOST, FLASK_PORT, FLASK_DEBUG
+from downloader.downloader import MultiStreamDownloader
+from downloader.simple_downloader import SimpleDownloader
+from downloader.config import (
+    DOWNLOAD_FOLDER,
+    FLASK_HOST,
+    FLASK_PORT,
+    FLASK_DEBUG
+)
 from turbolane.engine import TurboLaneEngine
 
 # Create global TurboLane instance (after imports):
@@ -51,6 +56,7 @@ class DownloadManager:
                 'total_size': 0,
                 'downloaded_size': 0,
                 'use_rl': use_rl
+                
             }
             
             # Start download in thread
@@ -142,7 +148,9 @@ class DownloadManager:
                 'metrics': download_info.get('metrics'),
                 'total_size': download_info.get('total_size', 0),
                 'downloaded_size': download_info.get('downloaded_size', 0),
-                'use_rl': download_info.get('use_rl', False)
+                'use_rl': download_info.get('use_rl', False),
+                'current_streams': download_info['downloader'].current_stream_count
+                 
             }
             
             return serializable_status

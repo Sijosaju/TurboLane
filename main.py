@@ -3,9 +3,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
-from downloader import MultiStreamDownloader
-from simple_downloader import SimpleDownloader
-from config import *
+from downloader.downloader import MultiStreamDownloader
+from downloader.simple_downloader import SimpleDownloader
+from downloader.config import *
 import os
 
 class DownloaderGUI:
