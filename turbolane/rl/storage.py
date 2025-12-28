@@ -1,5 +1,5 @@
 """
-turbolane/rl/storage.py - Q-table persistence
+turbolane/rl/storage.py - Q-table persistence (FIXED for model path flexibility)
 """
 import json
 import os
@@ -7,11 +7,19 @@ import time
 
 
 class QTableStorage:
-    """Handles Q-table loading and saving."""
+    """Handles Q-table loading and saving with configurable path."""
     
     def __init__(self, storage_path='models/client', 
                  table_file='q_table.json',
                  backup_file='q_table_backup.json'):
+        """
+        Initialize storage with configurable path.
+        
+        Args:
+            storage_path: Directory path for Q-table storage (e.g., 'models/client' or 'models/dci_model')
+            table_file: Q-table filename
+            backup_file: Backup filename
+        """
         self.storage_path = storage_path
         self.table_file = os.path.join(storage_path, table_file)
         self.backup_file = os.path.join(storage_path, backup_file)
@@ -37,11 +45,11 @@ class QTableStorage:
                     except:
                         continue
                 
-                print(f"✅ Q-table loaded: {len(Q)} states")
+                print(f"✅ Q-table loaded from {self.storage_path}: {len(Q)} states")
                 return Q, metadata
                 
         except Exception as e:
-            print(f"⚠️ Could not load Q-table: {e}")
+            print(f"⚠️ Could not load Q-table from {self.storage_path}: {e}")
         
         return {}, {}
     
@@ -63,7 +71,8 @@ class QTableStorage:
                     'average_reward': stats.get('average_reward', 0),
                     'throughput_improvements': stats.get('throughput_improvements', 0),
                     'optimal_range_usage': stats.get('optimal_range_usage', 0),
-                    'timestamp': time.time()
+                    'timestamp': time.time(),
+                    'storage_path': self.storage_path  # Track which model this is
                 }
             }
             
@@ -76,7 +85,7 @@ class QTableStorage:
             
             os.replace(temp_file, self.table_file)
             
-            print(f"💾 Q-table saved: {len(Q)} states")
+            print(f"💾 Q-table saved to {self.storage_path}: {len(Q)} states")
             
         except Exception as e:
-            print(f"❌ Error saving Q-table: {e}")
+            print(f"❌ Error saving Q-table to {self.storage_path}: {e}")
