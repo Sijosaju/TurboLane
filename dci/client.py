@@ -125,6 +125,18 @@ class StreamWorkerPool:
         sock = None
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            
+            # CRITICAL FIX: Set socket timeouts to prevent hanging
+            sock.settimeout(300.0)  # 5 minute timeout
+            
+            # CRITICAL FIX: Enable TCP keepalive to prevent idle disconnects
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            
+            # Windows-specific TCP keepalive settings
+            if hasattr(socket, 'SIO_KEEPALIVE_VALS'):
+                # (on/off, idle time ms, interval ms)
+                sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 60000, 30000))
+            
             sock.connect((self.server_host, self.server_port))
             
             with open(self.filepath, 'rb') as f:
@@ -151,14 +163,18 @@ class StreamWorkerPool:
                     with self.metrics.lock:
                         self.metrics.bytes_sent += len(data)
                     
-                    # Wait for ACK
+                    # Wait for ACK with timeout
                     try:
+                        sock.settimeout(30.0)  # 30 second timeout for ACK
                         ack_header = protocol.receive_exact(sock, 14)
                         _, _, _, ack_len = struct.unpack("!8sBBI", ack_header)
                         if ack_len > 0:
                             protocol.receive_exact(sock, ack_len)
-                    except:
-                        pass  # ACK is optional
+                        sock.settimeout(300.0)  # Restore long timeout
+                    except socket.timeout:
+                        logger.warning(f"Stream {stream_id}: ACK timeout, continuing...")
+                    except Exception as e:
+                        logger.debug(f"Stream {stream_id}: ACK error (non-fatal): {e}")
                     
                     self.task_queue.task_done()
             
@@ -187,6 +203,7 @@ class DCIClient:
         self.server_host = server_host
         self.server_port = server_port
         self.transfer_id = None
+        self.transfer_complete = False
         self.rl_enabled = config.RL_ENABLED and RL_AVAILABLE
         
         # Initialize directories
@@ -316,6 +333,7 @@ class DCIClient:
         # Wait for transfer to complete
         start_time = time.time()
         self.worker_pool.wait_completion()
+        self.transfer_complete = True
         elapsed = time.time() - start_time
         
         # Stop monitoring
@@ -357,6 +375,10 @@ class DCIClient:
         
         while not self.stop_monitoring.is_set():
             time.sleep(5)  # Monitor every 5 seconds
+            if self.transfer_complete:
+                logger.info("🛑 Transfer complete — freezing RL decisions")
+                break
+
             
             if self.stop_monitoring.is_set():
                 break
