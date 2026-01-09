@@ -1,34 +1,35 @@
 """
-turbolane/engine.py - TurboLane Control-Plane Engine
-Thin wrapper around RL agent for decision-making only
+turbolane/engine.py - Updated with algorithm configuration
 """
-
 
 class TurboLaneEngine:
     """
     TurboLane control-plane engine.
-    Provides decision-making interface without touching data path.
+    Supports both Q-learning and PPO algorithms.
     """
     
-    def __init__(self, mode='client'):
+    def __init__(self, mode='client', algorithm='ppo'):
         """
         Initialize TurboLane engine.
         
         Args:
             mode: 'client' or 'dci' (DCI not implemented yet)
+            algorithm: 'qlearning' or 'ppo'
         """
         self.mode = mode
+        self.algorithm = algorithm.lower()
         
         if mode == 'client':
             from turbolane.modes.client import ClientPolicy
-            self.policy = ClientPolicy()
+            self.policy = ClientPolicy(algorithm=self.algorithm)
         else:
             raise NotImplementedError(f"Mode '{mode}' not implemented yet")
+        
+        print(f"🤖 TurboLane Engine initialized with {self.algorithm.upper()} algorithm")
     
     def decide(self, throughput, rtt, packet_loss):
         """
         Make a decision about stream count based on network metrics.
-        This is fast and non-blocking - just returns a number.
         
         Args:
             throughput: Current throughput in Mbps

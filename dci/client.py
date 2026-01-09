@@ -1,7 +1,6 @@
 """
-DCI Client Module - ULTIMATE VERSION
-
-Fully integrated with turbolane library for dynamic stream adjustment.
+DCI Client Module - ULTIMATE VERSION with PPO Support
+Fixed import for deque.
 """
 
 import socket
@@ -9,10 +8,12 @@ import threading
 import logging
 import time
 import struct
+import os
 from pathlib import Path
 from typing import Optional, List
 from queue import Queue, Empty
 from dataclasses import dataclass
+from collections import deque  # IMPORT ADDED
 
 from . import config
 from . import protocol
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 # Import turbolane components
 try:
     from turbolane.rl.agent import RLAgent
+    from turbolane.rl.ppo_agent import PPOAgent
     from turbolane.rl.storage import QTableStorage
     RL_AVAILABLE = True
 except ImportError as e:
@@ -213,8 +215,8 @@ class DCIClient:
     DCI file transfer client with FULLY DYNAMIC RL-based stream adjustment.
     
     This is the ULTIMATE version that:
-    - Uses turbolane.rl.agent.RLAgent for decisions
-    - Uses turbolane.rl.storage.QTableStorage for persistence
+    - Supports both Q-learning and PPO algorithms
+    - Uses paper's exact utility function for PPO
     - Dynamically spawns/kills streams during transfer
     - Learns from every transfer to improve future performance
     """
@@ -225,34 +227,63 @@ class DCIClient:
         self.transfer_id = None
         self.transfer_complete = False
         self.rl_enabled = config.RL_ENABLED and RL_AVAILABLE
+        self.algorithm = config.RL_ALGORITHM.lower() if hasattr(config, 'RL_ALGORITHM') else 'ppo'
 
         # Initialize directories
         config.initialize_directories()
 
         if self.rl_enabled:
-            # Initialize RL agent from turbolane library
+            # Initialize RL agent based on algorithm choice
             self.storage = QTableStorage(storage_path=config.get_model_path())
             
-            # Load existing Q-table
-            Q, metadata = self.storage.load()
+            if self.algorithm == 'qlearning':
+                # Load existing Q-table for Q-learning
+                Q, metadata = self.storage.load()
+                
+                # Create Q-learning agent
+                self.rl_agent = RLAgent(
+                    monitoring_interval=5.0,
+                    min_connections=config.RL_MIN_STREAMS,
+                    max_connections=config.RL_MAX_STREAMS,
+                    default_connections=config.RL_INITIAL_STREAMS
+                )
+                
+                # Restore Q-table if exists
+                if Q:
+                    self.rl_agent.Q = Q
+                    self.rl_agent.total_decisions = metadata.get('total_decisions', 0)
+                    self.rl_agent.total_learning_updates = metadata.get('total_updates', 0)
+                    logger.info(f"✅ Loaded Q-table: {len(Q)} states, "
+                               f"{metadata.get('total_decisions', 0)} decisions")
             
-            # Create RL agent
-            self.rl_agent = RLAgent(
-                monitoring_interval=5.0,  # Check every 5 seconds
-                min_connections=config.RL_MIN_STREAMS,
-                max_connections=config.RL_MAX_STREAMS,
-                default_connections=config.RL_INITIAL_STREAMS
-            )
+            elif self.algorithm == 'ppo':
+                # Create PPO agent with paper's parameters
+                self.rl_agent = PPOAgent(
+                    state_history_size=getattr(config, 'PPO_STATE_HISTORY_SIZE', 5),
+                    learning_rate=getattr(config, 'PPO_LEARNING_RATE', 0.001),
+                    gamma=getattr(config, 'PPO_GAMMA', 0.99),
+                    clip_epsilon=getattr(config, 'PPO_CLIP_EPSILON', 0.2),
+                    ppo_epochs=getattr(config, 'PPO_EPOCHS', 10),
+                    batch_size=getattr(config, 'PPO_BATCH_SIZE', 64),
+                    min_connections=config.RL_MIN_STREAMS,
+                    max_connections=config.RL_MAX_STREAMS,
+                    default_connections=config.RL_INITIAL_STREAMS
+                )
+                
+                # Try to load PPO model
+                model_path = config.get_model_path()
+                ppo_model_file = os.path.join(model_path, 'ppo_model.pt')
+                if os.path.exists(ppo_model_file):
+                    try:
+                        self.rl_agent.load(ppo_model_file)
+                        logger.info(f"✅ Loaded PPO model from {ppo_model_file}")
+                    except Exception as e:
+                        logger.warning(f"Could not load PPO model: {e}")
             
-            # Restore Q-table if exists
-            if Q:
-                self.rl_agent.Q = Q
-                self.rl_agent.total_decisions = metadata.get('total_decisions', 0)
-                self.rl_agent.total_learning_updates = metadata.get('total_updates', 0)
-                logger.info(f"✅ Loaded Q-table: {len(Q)} states, "
-                           f"{metadata.get('total_decisions', 0)} decisions")
+            else:
+                raise ValueError(f"Unsupported RL algorithm: {self.algorithm}")
             
-            logger.info("🚀 RL acceleration enabled (turbolane integration)")
+            logger.info(f"🚀 RL acceleration enabled ({self.algorithm.upper()} algorithm)")
             logger.info(f"   Model path: {config.get_model_path()}")
         else:
             self.rl_agent = None
@@ -372,13 +403,20 @@ class DCIClient:
             logger.info(f"   Throughput: {throughput:.2f} MB/s")
             logger.info(f"   Initial streams: {num_streams}")
             logger.info(f"   Final streams: {final_streams}")
+            logger.info(f"   Algorithm: {self.algorithm.upper()}")
             logger.info("=" * 60)
 
-            # Save Q-table to disk
+            # Save RL model to disk
             if self.rl_enabled:
-                stats = self.rl_agent.get_stats()
-                self.storage.save(self.rl_agent.Q, stats)
-                logger.info(f"💾 Q-table saved: {len(self.rl_agent.Q)} states")
+                if self.algorithm == 'qlearning':
+                    stats = self.rl_agent.get_stats()
+                    self.storage.save(self.rl_agent.Q, stats)
+                    logger.info(f"💾 Q-table saved: {len(self.rl_agent.Q)} states")
+                elif self.algorithm == 'ppo':
+                    model_path = config.get_model_path()
+                    ppo_model_file = os.path.join(model_path, 'ppo_model.pt')
+                    self.rl_agent.save(ppo_model_file)
+                    logger.info(f"💾 PPO model saved to {ppo_model_file}")
         else:
             logger.error("❌ Transfer failed")
 
@@ -386,13 +424,26 @@ class DCIClient:
 
     def adaptive_monitor(self, total_filesize: int):
         """
-        Monitor thread that uses turbolane.rl.agent to make adaptive decisions.
+        Monitor thread that uses RL agent to make adaptive decisions.
         This is where the magic happens - streams are adjusted in real-time!
         """
-        logger.info("🔍 Starting adaptive monitoring with turbolane RL agent...")
+        logger.info(f"🔍 Starting adaptive monitoring with {self.algorithm.upper()} algorithm...")
+
+        # Tracking for PPO state history
+        throughput_history = deque(maxlen=5)
+        rtt_history = deque(maxlen=5)
+        loss_history = deque(maxlen=5)
+        
+        last_decision_time = time.time()
+        monitoring_interval = 5.0  # Paper's Monitoring Interval (MI)
 
         while not self.stop_monitoring.is_set():
-            time.sleep(5)  # Monitor every 5 seconds
+            current_time = time.time()
+            
+            # Check if it's time for a monitoring interval
+            if current_time - last_decision_time < monitoring_interval:
+                time.sleep(0.5)
+                continue
 
             if self.transfer_complete:
                 logger.info("✅ Transfer complete - freezing RL decisions")
@@ -402,7 +453,6 @@ class DCIClient:
                 break
 
             with self.metrics.lock:
-                current_time = time.time()
                 time_delta = current_time - self.metrics.last_measurement_time
 
                 if time_delta < 1.0:
@@ -412,6 +462,11 @@ class DCIClient:
                 throughput_mbps = (bytes_delta / time_delta) / (1024 * 1024)
                 self.metrics.current_throughput_mbps = throughput_mbps
 
+                # Store in history for PPO state
+                throughput_history.append(throughput_mbps)
+                rtt_history.append(50.0)  # Assume datacenter link
+                loss_history.append(0.1 if throughput_mbps > 100 else 0.5)
+
                 # Calculate progress
                 progress = (self.metrics.bytes_sent / total_filesize) * 100
                 current_streams = self.worker_pool.get_active_count()
@@ -420,17 +475,39 @@ class DCIClient:
                            f"Throughput: {throughput_mbps:.2f} MB/s | "
                            f"Active streams: {current_streams}")
 
+                # ⚡ RL DECISION MAKING
                 # Estimate RTT and loss (since we don't have real metrics in DCI)
                 estimated_rtt = 50.0  # Assume datacenter link
                 estimated_loss = 0.1 if throughput_mbps > 100 else 0.5
 
-                # ⚡ STEP 1: Make RL decision
-                desired_streams = self.rl_agent.make_decision(
-                    throughput_mbps,    # throughput in Mbps
-                    estimated_rtt,      # rtt in ms
-                    estimated_loss      # packet_loss_pct (percentage)
-                )
-                # Note: agent.py expects positional args (throughput, rtt, packet_loss_pct)
+                # For PPO, we need to provide proper state
+                if self.algorithm == 'ppo':
+                    # Calculate RTT gradient and ratio for PPO state
+                    if len(rtt_history) >= 2:
+                        rtt_gradient = rtt_history[-1] - rtt_history[-2]
+                    else:
+                        rtt_gradient = 0.0
+                    
+                    if hasattr(self, 'min_rtt'):
+                        self.min_rtt = min(self.min_rtt, estimated_rtt)
+                    else:
+                        self.min_rtt = estimated_rtt
+                    
+                    rtt_ratio = estimated_rtt / max(self.min_rtt, 1.0)
+                    
+                    # Get state from PPO agent (it handles history internally)
+                    desired_streams = self.rl_agent.make_decision(
+                        throughput_mbps,    # throughput in Mbps
+                        estimated_rtt,      # rtt in ms
+                        estimated_loss      # packet_loss_pct (percentage)
+                    )
+                else:
+                    # Q-learning uses the same interface
+                    desired_streams = self.rl_agent.make_decision(
+                        throughput_mbps,    # throughput in Mbps
+                        estimated_rtt,      # rtt in ms
+                        estimated_loss      # packet_loss_pct (percentage)
+                    )
 
                 # Adjust worker pool based on RL decision
                 stream_diff = desired_streams - current_streams
@@ -447,17 +524,26 @@ class DCIClient:
                 else:
                     logger.debug(f"🔧 RL Decision: MAINTAIN {current_streams} streams")
 
-                # ⚡ STEP 2: Learn from feedback (CRITICAL - THIS WAS MISSING!)
-                self.rl_agent.learn_from_feedback(
-                    throughput_mbps,    # current_throughput
-                    estimated_rtt,      # current_rtt
-                    estimated_loss      # current_packet_loss_pct
-                )
-                # Note: agent.py expects positional args
+                # ⚡ RL LEARNING
+                if self.algorithm == 'ppo':
+                    # PPO learns from feedback
+                    self.rl_agent.learn_from_feedback(
+                        throughput_mbps,    # current_throughput
+                        estimated_rtt,      # current_rtt
+                        estimated_loss      # current_packet_loss_pct
+                    )
+                else:
+                    # Q-learning learning
+                    self.rl_agent.learn_from_feedback(
+                        throughput_mbps,    # current_throughput
+                        estimated_rtt,      # current_rtt
+                        estimated_loss      # current_packet_loss_pct
+                    )
 
                 # Update measurement baseline
                 self.metrics.last_measurement_time = current_time
                 self.metrics.last_measurement_bytes = self.metrics.bytes_sent
+                last_decision_time = current_time
 
         logger.info("🛑 Adaptive monitoring stopped")
 
@@ -515,12 +601,18 @@ def main():
                        help="Initial number of streams (default: RL decides)")
     parser.add_argument('--no-rl', action='store_true',
                        help="Disable RL acceleration")
+    parser.add_argument('--algorithm', choices=['qlearning', 'ppo'], default='ppo',
+                       help="RL algorithm to use (default: ppo)")
 
     args = parser.parse_args()
 
-    # Override RL setting if requested
+    # Override RL settings if requested
     if args.no_rl:
         config.RL_ENABLED = False
+    
+    # Override algorithm if specified
+    if args.algorithm:
+        config.RL_ALGORITHM = args.algorithm
 
     # Create client and send file
     client = DCIClient(server_host=args.server, server_port=args.port)
