@@ -16,7 +16,7 @@ from collections import deque
 from downloader.config import *
 
 try:
-    from turbolane.engine import TurboLaneEngine
+    from turbolane import TurboLaneEngine
     TURBOLANE_AVAILABLE = True
 except ImportError:
     TURBOLANE_AVAILABLE = False

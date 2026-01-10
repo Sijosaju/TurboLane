@@ -1,7 +1,10 @@
 """
-TurboLane - Reusable control-plane library for download optimization
+TurboLane - Intelligent Transfer Engine
 """
-from turbolane.engine import TurboLaneEngine
 
-__version__ = "1.0.0"
-__all__ = ['TurboLaneEngine']
+from .engine import TurboLaneEngine
+from .policies import EdgePolicy, FederatedPolicy
+
+__all__ = ['TurboLaneEngine', 'EdgePolicy', 'FederatedPolicy']
+
+

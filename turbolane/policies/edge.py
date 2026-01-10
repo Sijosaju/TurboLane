@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ClientPolicy:
+class EdgePolicy:
     """
     Client-side download optimization policy.
     Supports both Q-learning and PPO algorithms via configuration.
@@ -201,14 +201,14 @@ class ClientPolicy:
         """
         try:
             self.agent.learn_from_feedback(throughput, rtt, packet_loss)
-            
-            # Auto-save periodically
-            if self.agent.total_updates > 0 and self.agent.total_updates % 50 == 0:
+    # Auto-save periodically
+    # Use correct attribute name depending on agent type
+            update_count = getattr(self.agent, 'total_updates', getattr(self.agent, 'total_learning_updates', 0))
+            if update_count > 0 and update_count % 50 == 0:
                 self.save()
-                logger.debug(f"Auto-saved after {self.agent.total_updates} updates")
-        
+                logger.debug(f"Auto-saved after {update_count} updates")
         except Exception as e:
-            logger.error(f"Error in learn_from_feedback(): {e}", exc_info=True)
+            logger.error(f"Error in learn_from_feedback(): {e}", exc_info=True) 
     
     def get_stats(self):
         """
@@ -396,12 +396,12 @@ class ClientPolicy:
 
 def create_qlearning_policy(**kwargs):
     """Create a Q-learning policy with custom parameters."""
-    return ClientPolicy(algorithm='qlearning', config_overrides=kwargs)
+    return EdgePolicy(algorithm='qlearning', config_overrides=kwargs)
 
 
 def create_ppo_policy(**kwargs):
     """Create a PPO policy with custom parameters."""
-    return ClientPolicy(algorithm='ppo', config_overrides=kwargs)
+    return EdgePolicy(algorithm='ppo', config_overrides=kwargs)
 
 
 def load_policy(algorithm='ppo'):
@@ -414,7 +414,7 @@ def load_policy(algorithm='ppo'):
     Returns:
         ClientPolicy: Loaded policy
     """
-    policy = ClientPolicy(algorithm=algorithm)
+    policy = EdgePolicy(algorithm=algorithm)
     logger.info(f"✅ Loaded {algorithm.upper()} policy")
     return policy
 

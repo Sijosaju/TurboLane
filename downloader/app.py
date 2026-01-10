@@ -711,7 +711,7 @@ def get_rl_stats():
     try:
         # Try to import TurboLane engine dynamically
         try:
-            from turbolane.engine import TurboLaneEngine
+            from turbolane.policies import TurboLaneEngine
             turbolane_engine = TurboLaneEngine(mode='client', algorithm=RL_ALGORITHM)
             stats = turbolane_engine.get_stats()
             available = True
@@ -732,7 +732,7 @@ def get_rl_stats():
 def reset_rl():
     """Reset RL learning (clear model)."""
     try:
-        from turbolane.engine import TurboLaneEngine
+        from turbolane.policies import TurboLaneEngine
         turbolane_engine = TurboLaneEngine(mode='client', algorithm=RL_ALGORITHM)
         turbolane_engine.reset()
         return jsonify({
