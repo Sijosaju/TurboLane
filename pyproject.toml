@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "turbolane-engine"
+version = "2.0.0"
+description = "TurboLane RL-based network optimization engine"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "platformdirs>=4.2.0",
+]
+authors = [
+  { name = "TurboLane Team" },
+]
+license = { text = "Proprietary" }
+keywords = ["optimization", "reinforcement-learning", "networking", "download"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+]
+
+[project.scripts]
+turbolane-engine = "turbolane.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["turbolane*"]
+
+[tool.setuptools.package-data]
+turbolane = ["data/**/*.json"]
