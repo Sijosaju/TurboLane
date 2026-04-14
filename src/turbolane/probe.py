@@ -7,9 +7,7 @@ Reads throughput, RTT, and packet loss directly from the OS TCP stack
 via TCP_INFO (Linux/macOS) or SIO_TCP_INFO (Windows).
 
 No external probing. No synthetic connections. Metrics come from the
-real transfer sockets, exactly as used in:
-    Jamil et al., "A Reinforcement Learning Approach to Optimize
-    Available Network Bandwidth Utilization", arXiv:2211.11949v2
+real transfer sockets.
 
 Design:
     - OS is detected once at init via platform.system()
