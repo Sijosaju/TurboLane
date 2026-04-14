@@ -31,7 +31,7 @@ FIXES applied (v3 — adaptive self-calibrating bins):
   OTHER FIXES retained from v2:
     - Stream count as 4th state dimension
     - Loss bins remain fixed (absolute thresholds ARE meaningful)
-    - Actions: ±5, ±1, 0  (matching the paper exactly)
+    - Actions: ±5, ±1, 0  (preserving the intended action set)
     - Reward positive by default during healthy operation
     - RTT penalty also adaptive (fires only in top 15% of observed RTT range)
 """

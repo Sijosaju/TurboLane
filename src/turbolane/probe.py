@@ -46,8 +46,8 @@ class SocketSnapshot:
     throughput_mbps : aggregate transfer rate (Mbps)
     rtt_ms          : mean smoothed RTT across all sockets (ms)
     loss_pct        : aggregate packet loss percentage
-    rtt_gradient    : rate-of-change of RTT (ms/s) — paper's state variable
-    rtt_ratio       : current_rtt / min_rtt_seen  — paper's state variable
+    rtt_gradient    : rate-of-change of RTT (ms/s) — derived state variable
+    rtt_ratio       : current_rtt / min_rtt_seen  — derived state variable
     socket_count    : number of sockets contributing
     valid           : False if no sockets or OS read failed → use safe defaults
     """
@@ -493,7 +493,7 @@ class TCPSocketReader:
 
         snapshot = self._reader.read_all(self._socket_states, interval)
 
-        # Compute paper's derived RTT signals
+        # Compute derived RTT signals
         if snapshot.valid and snapshot.rtt_ms > 0:
             prev_rtt = self._rtt_history[-1] if self._rtt_history else snapshot.rtt_ms
             snapshot.rtt_gradient = (snapshot.rtt_ms - prev_rtt) / interval
